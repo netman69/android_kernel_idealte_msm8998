@@ -129,31 +129,20 @@ typedef enum {
     P1_7    
 } P1_Enum;
  
-//以下P0_X,P1_Y这两个数组的值会通过aw9523b_setting.h配置文件里的参数动态算出来
-static const u8 p0_port_be_press_value[2][X_NUM] = {
-													{0xfe,0xbf,0xdf,0xef,0xf7,0xfd,0xfb,0x7f},
-													{0xfa,0xbb,0xdb,0xeb,0xf3,0xf9,0xf7,0x7b},
-													}; /*根据硬件设计， 每一列按下去P0口的值，通过这个值，可以判断是哪列被按下*/
-//本例中计算出的P0_X[0:3]={0xfe,0xfd,0xfb,0xf7}
-//本例中计算出的P1_Y[0:5]={0x3e,0x3d,0x3b,0x37,0x2f,0x1f}
-
 static u8  aw9523b_chip_id = 0;
 
 static struct input_dev *aw9523b_input_dev;
 static struct i2c_client *g_client = NULL;
 
-#define AW9523B_KEY_WWW  253
-#define AW9523B_KEY_NULL 0x0
-static const unsigned short func_key_array[8] = {KEY_LEFTSHIFT,KEY_LEFTALT,KEY_LEFTCTRL,KEY_RIGHTSHIFT,KEY_RIGHTALT,KEY_RIGHTCTRL};
 static const unsigned short  key_array[Y_NUM][X_NUM] = {
-        {KEY_F1,        KEY_Y,	  KEY_ENTER,  KEY_UP,       KEY_7,        KEY_H,        KEY_B,         KEY_COMMA},
-        {KEY_3,         KEY_W,	  KEY_9,      KEY_I,        KEY_M,        KEY_S,        KEY_Z,         KEY_J},
-        {KEY_LEFT,      KEY_T,	  KEY_DELETE, KEY_RIGHT,    KEY_6,        KEY_G,        KEY_V,         KEY_DOT},
-        {KEY_SYM,        KEY_Q,	  KEY_MINUS,  KEY_P,        KEY_HOMEPAGE, KEY_A,        KEY_RIGHTBRACE,KEY_L},
-        {KEY_BACKSPACE, KEY_E,	  KEY_EQUAL,  KEY_SEMICOLON,KEY_K,        KEY_D,        KEY_X,         KEY_APOSTROPHE},
-        {KEY_CAPSLOCK,  KEY_GRAVE,KEY_0,      KEY_O,        KEY_DOWN,     KEY_BACKSLASH,KEY_LEFTBRACE, KEY_K},
-        {KEY_SPACE,     KEY_R, 	  KEY_8,      KEY_U,        KEY_N,        KEY_F,        KEY_C,         KEY_5},
-        {KEY_BACK,       KEY_TAB,  KEY_4,      KEY_2 ,       0XFF,         KEY_1, 0XFF,0XFF},
+	{ KEY_F1,        KEY_H,         KEY_B,          KEY_7,        KEY_UP,        KEY_ENTER,  KEY_Y,     KEY_COMMA       },
+	{ KEY_3,         KEY_S,         KEY_Z,          KEY_M,        KEY_I,         KEY_9,      KEY_W,     KEY_J           },
+	{ KEY_LEFT,      KEY_G,         KEY_V,          KEY_6,        KEY_RIGHT,     KEY_DELETE, KEY_T,     KEY_DOT         },
+	{ KEY_SYM,       KEY_A,         KEY_RIGHTBRACE, KEY_HOMEPAGE, KEY_P,         KEY_MINUS,  KEY_Q,     KEY_L           },
+	{ KEY_BACKSPACE, KEY_D,         KEY_X,          KEY_K,        KEY_SEMICOLON, KEY_EQUAL,  KEY_E,     KEY_APOSTROPHE  },
+	{ KEY_CAPSLOCK,  KEY_BACKSLASH, KEY_LEFTBRACE,  KEY_DOWN,     KEY_O,         KEY_0,      KEY_GRAVE, KEY_K           },
+	{ KEY_SPACE,     KEY_F,         KEY_C,          KEY_N,        KEY_U,         KEY_8,      KEY_R,     KEY_5           },
+	{ KEY_BACK,      KEY_1,         0xFF,           0xFF,         KEY_2,         KEY_4,      KEY_TAB,   0xFF            }
 };
 
 #define P1_DEFAULT_VALUE  1  /*p1用来输出，这个值是p1的初始值*/
@@ -430,7 +419,6 @@ static void aw9523b_work_func(struct work_struct *work)
 {
 	u8 state[Y_NUM] = { 0, 0, 0, 0, 0, 0, 0, 0 }; // State of the matrix.
 	static u8 down[Y_NUM] = { 0, 0, 0, 0, 0, 0, 0, 0 }; // Which keys keydown events are actually sent for (excludes ghosted keys).
-	static const u8 remap[X_NUM] = { 0, 5, 6, 4, 3, 2, 1, 7 }; // TODO Just reorganize keys_array instead.
 
 	struct aw9523b_data *pdata = NULL;
 	u16 keycode = 0xFF;
@@ -458,7 +446,7 @@ static void aw9523b_work_func(struct work_struct *work)
 	// Find changed keys and send keycodes for them.
 	for (i = 0; i < Y_NUM; i++) {
 		for (j = 0; j < X_NUM; j++) {
-			keycode = key_array[i][remap[j]];
+			keycode = key_array[i][j];
 			if (state[i] & (1 << j) && !(down[i] & (1 << j))) { // Keypress.
 				// Check if the key is possibly a ghost.
 				// Talking from the point of view that P1 is the row driver and P0 are columns.
