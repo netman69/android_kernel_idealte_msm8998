@@ -212,7 +212,7 @@ static int aw9523b_read_reg(u8 addr, u8 *val)
 static u8 aw9523b_read_byte(u8 addr)
 {
 	u8 val;
-	aw9523b_read_reg(addr,&val);
+	aw9523b_read_reg(addr, &val);
 	return val;
 }
 #endif
@@ -223,27 +223,27 @@ static int aw9523b_hw_reset(struct aw9523b_data *data)
 
 	ret = gpio_direction_output(data->gpio_rst, 1);
 	if (ret) {
-		dev_err(&data->client->dev,"set_direction for pdata->gpio_rst failed\n");
+		dev_err(&data->client->dev, "set_direction for pdata->gpio_rst failed\n");
 	}
 
 	udelay(50);
 
-	ret = aw9523b_write_reg(REG_SOFT_RESET,0x00);//softrest
+	ret = aw9523b_write_reg(REG_SOFT_RESET, 0x00);//softrest
 	if (ret < 0) {
 		//can not communicate with aw9523b
-		dev_err(&data->client->dev,"*****can not communicate with aw9523b\n");
+		dev_err(&data->client->dev, "*****can not communicate with aw9523b\n");
 		return 0xff;
 	}
 
 	ret = gpio_direction_output(data->gpio_rst, 0);
 	if (ret) {
-		dev_err(&data->client->dev,"set_direction for pdata->gpio_rst failed\n");
+		dev_err(&data->client->dev, "set_direction for pdata->gpio_rst failed\n");
 	}
 
 	udelay(250);
 	ret = gpio_direction_output(data->gpio_rst, 1);
 	  if (ret) {
-		dev_err(&data->client->dev,"set_direction for pdata->gpio_rst failed\n");
+		dev_err(&data->client->dev, "set_direction for pdata->gpio_rst failed\n");
 	}
 
 	udelay(50);
@@ -295,14 +295,14 @@ static void aw9523b_disable_P1_interupt(void)
 static u8 aw9523b_get_P0_value(void)
 {
 	u8 value = 0;
-	aw9523b_read_reg(0x00,&value);
+	aw9523b_read_reg(0x00, &value);
 	return value;
 }
 
 static u8 aw9523b_get_P1_value(void)
 {
 	u8 value = 0;
-	aw9523b_read_reg(0x01,&value);
+	aw9523b_read_reg(0x01, &value);
 	return value;
 }
 
@@ -454,7 +454,7 @@ static irqreturn_t aw9523b_irq_handler(int irq, void *dev_id)
 {
 	struct aw9523b_data *pdata = dev_id;
 
-	printk("%s enter\n",__func__);
+	printk("%s enter\n", __func__);
 
 	aw9523b_irq_disable(pdata);
 
@@ -510,7 +510,6 @@ static struct attribute *aw9523b_attrs[] = {
 	&dev_attr_aw9523b_chip_id.attr,
 	NULL
 };
-
 static const struct attribute_group aw9523b_attr_grp = {
 	.attrs = aw9523b_attrs,
 };
@@ -527,11 +526,11 @@ static struct driver_attribute *aw9523b_attr_list[] = {
 
 static int aw9523b_create_attr(struct device_driver *driver)
 {
-	int idx,err=0;
+	int idx, er r =0;
 	int num = (int)(sizeof(aw9523b_attr_list)/sizeof(aw9523b_attr_list[0]));
 
 	if (driver == NULL)
-			return -EINVAL;
+		return -EINVAL;
 
 	for (idx = 0; idx < num; idx++) {
 		if ((err = driver_create_file(driver, aw9523b_attr_list[idx]))) {
@@ -547,7 +546,7 @@ static struct platform_driver aw9523b_pdrv;
 #endif
 static int register_aw9523b_input_dev(struct device *pdev)
 {
-	int i,j;
+	int i, j;
 
 	AW9523_FUN(f);
 
@@ -700,7 +699,7 @@ static int aw9523b_parse_dt(struct device *dev,
 			return -ENODEV;
 		}
 		err = gpio_direction_input(pdata->gpio_irq);
-		//err = gpio_direction_output(pdata->gpio_rst,0);
+		//err = gpio_direction_output(pdata->gpio_rst, 0);
 		if (err) {
 			dev_err(&pdata->client->dev,
 				"set_direction for pdata->gpio_irq failed\n");
@@ -731,7 +730,7 @@ static int aw9523b_probe(struct i2c_client *client,
 	int devic_id = 0;
 	struct aw9523b_data *pdata;
 
-	printk("%s begin\n",__func__);
+	printk("%s begin\n", __func__);
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		dev_err(&client->dev, "i2c_check_functionality error\n");
 		err = -EPERM;
@@ -751,7 +750,7 @@ static int aw9523b_probe(struct i2c_client *client,
 			goto pdata_free_exit;
 		}
 	}
-	printk ("rst_gpio=%d irq_gpio=%d irq=%d\n",pdata->gpio_rst,pdata->gpio_irq,client->irq);
+	printk ("rst_gpio=%d irq_gpio=%d irq=%d\n", pdata->gpio_rst, pdata->gpio_irq, client->irq);
 
 	if (!pdata) {
 		dev_err(&client->dev, "Cannot get device platform data\n");
@@ -817,7 +816,7 @@ static int aw9523b_probe(struct i2c_client *client,
 	aw9523b_get_P0_value();
 	aw9523b_get_P1_value();
 
-	// debug_printk("%s device_id = %d\n",__func__,devic_id);
+	// debug_printk("%s device_id = %d\n", __func__, devic_id);
 	INIT_DELAYED_WORK(&pdata->work, aw9523b_work_func);
 	pdata->irq_is_disabled = true;
 	err = request_irq(client->irq,
@@ -825,10 +824,10 @@ static int aw9523b_probe(struct i2c_client *client,
 			IRQ_TYPE_LEVEL_LOW,
 			client->name, pdata);
 
-	printk("request_threaded_irq %d\n",err);
+	printk("request_threaded_irq %d\n", err);
 	//schedule_delayed_work(&pdata->keypad_work, 0);
 	aw9523b_irq_enable(pdata);
-	printk("%s exit success\n",__func__);
+	printk("%s exit success\n", __func__);
 	return 0;
 
 //exit_remove_sysfs:
