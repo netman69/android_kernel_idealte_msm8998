@@ -222,28 +222,27 @@ static int aw9523b_hw_reset(struct aw9523b_data *data)
 	int ret = 0;
 
 	ret = gpio_direction_output(data->gpio_rst, 1);
-	if(ret){
+	if (ret) {
 		dev_err(&data->client->dev,"set_direction for pdata->gpio_rst failed\n");
 	}
 
 	udelay(50);
 
 	ret = aw9523b_write_reg(REG_SOFT_RESET,0x00);//softrest
-	if(ret < 0)
-	{
+	if (ret < 0) {
 		//can not communicate with aw9523b
 		dev_err(&data->client->dev,"*****can not communicate with aw9523b\n");
 		return 0xff;
 	}
 
 	ret = gpio_direction_output(data->gpio_rst, 0);
-	if(ret){
+	if (ret) {
 		dev_err(&data->client->dev,"set_direction for pdata->gpio_rst failed\n");
 	}
 
 	udelay(250);
 	ret = gpio_direction_output(data->gpio_rst, 1);
-	  if(ret){
+	  if (ret) {
 		dev_err(&data->client->dev,"set_direction for pdata->gpio_rst failed\n");
 	}
 
@@ -256,7 +255,7 @@ static int aw9523b_hw_reset(struct aw9523b_data *data)
 static int aw9523b_i2c_test(struct aw9523b_data *data)
 {
 	aw9523b_read_reg(IC_ID, &aw9523b_chip_id);
-	if(aw9523b_chip_id == 0x23 ) // read chip_id =0x23h   reg_addr=0x10h
+	if (aw9523b_chip_id == 0x23) // read chip_id =0x23h   reg_addr=0x10h
 	{
 		printk("aw9523b get chip_id success,chip_id = %d\n", aw9523b_chip_id);
 		return 0;
@@ -416,7 +415,7 @@ static void aw9523b_work_func(struct work_struct *work)
 				down[i] |= (1 << j);
 				// Handle the keycode.
 				if (keycode == KEY_CAPSLOCK) {
-					if(capslock_led_enable == 0)
+					if (capslock_led_enable == 0)
 						gpio_direction_output(pdata->gpio_caps_led, 1);
 					capslock_led_enable++;
 				}
@@ -534,8 +533,8 @@ static int aw9523b_create_attr(struct device_driver *driver)
 	if (driver == NULL)
 			return -EINVAL;
 
-	for(idx = 0; idx < num; idx++) {
-		if((err = driver_create_file(driver, aw9523b_attr_list[idx]))) {
+	for (idx = 0; idx < num; idx++) {
+		if ((err = driver_create_file(driver, aw9523b_attr_list[idx]))) {
 			printk("driver_create_file (%s) = %d\n", aw9523b_attr_list[idx]->attr.name, err);
 			break;
 		}
@@ -782,7 +781,7 @@ static int aw9523b_probe(struct i2c_client *client,
 
 
 	err = aw9523b_hw_reset(pdata);
-	if(err == 0xff)
+	if (err == 0xff)
 	{
 		dev_err(&client->dev, "aw9523b failed to write \n");
 		err = -EINVAL;
@@ -793,7 +792,7 @@ static int aw9523b_probe(struct i2c_client *client,
 	}
 
 	devic_id = aw9523b_i2c_test(pdata);
-	if(devic_id < 0)
+	if (devic_id < 0)
 	{
 		dev_err(&client->dev, "aw9523b failed to read \n\n\n\n");
 		err = -EINVAL;
