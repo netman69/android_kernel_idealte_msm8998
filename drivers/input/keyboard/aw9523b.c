@@ -104,8 +104,8 @@ struct aw9523b_data {
 	struct delayed_work work;
 };
 
-#define AW9523B_VIO_MIN_UV       1800000
-#define AW9523B_VIO_MAX_UV       1800000
+#define AW9523B_VIO_MIN_UV       (1800000)
+#define AW9523B_VIO_MAX_UV       (1800000)
 
 static u8  aw9523b_chip_id = 0;
 
@@ -123,9 +123,11 @@ static const unsigned short  key_array[Y_NUM][X_NUM] = {
 	{ KEY_BACK,      KEY_1,         0xFF,           0xFF,         KEY_2,         KEY_4,      KEY_TAB,   0xFF            }
 };
 
-#define P1_DEFAULT_VALUE  1  /*p1用来输出，这个值是p1的初始值*/
-#define OUT_LOW_VALUE 0
-#define OUT_HIGH_VALUE 1
+// This macro sets the interval between polls of the key matrix for ghosted keys (in milliseconds).
+// Note that polling only happens if a key is already pressed.
+#define POLL_INTERVAL (50) // TODO Decide how fast to poll.
+
+#define P1_DEFAULT_VALUE (0) /*p1用来输出，这个值是p1的初始值*/
 
 static int aw9523b_i2c_read(struct i2c_client *client, char *writebuf,
                int writelen, char *readbuf, int readlen)
@@ -197,8 +199,6 @@ static int aw9523b_write_reg(u8 addr, const u8 val)
 	return aw9523b_i2c_write(g_client, buf, sizeof(buf));
 }
 
-
-
 static int aw9523b_read_reg(u8 addr, u8 *val)
 {
 	int ret;
@@ -269,46 +269,46 @@ static int aw9523b_i2c_test(struct aw9523b_data *data)
 
 static void aw9523b_config_P1_output(void)
 {
-	aw9523b_write_reg(0x05, 0x00);
+	aw9523b_write_reg(CONFIG_PORT1, 0x00);
 }
 
 static void aw9523b_config_P0_input(void)
 {
-	aw9523b_write_reg(0x04, 0xFF);
+	aw9523b_write_reg(CONFIG_PORT0, 0xFF);
 }
 
 static void aw9523b_enable_P0_interupt(void)
 {
-	aw9523b_write_reg(0x06, 0x00);
+	aw9523b_write_reg(INT_PORT0, 0x00);
 }
 
 static void aw9523b_disable_P0_interupt(void)
 {
-	aw9523b_write_reg(0x06, 0xff);
+	aw9523b_write_reg(INT_PORT0, 0xff);
 }
 
 static void aw9523b_disable_P1_interupt(void)
 {
-	aw9523b_write_reg(0x07, 0xff);
+	aw9523b_write_reg(INT_PORT1, 0xff);
 }
 
 static u8 aw9523b_get_P0_value(void)
 {
 	u8 value = 0;
-	aw9523b_read_reg(0x00, &value);
+	aw9523b_read_reg(INPUT_PORT0, &value);
 	return value;
 }
 
 static u8 aw9523b_get_P1_value(void)
 {
 	u8 value = 0;
-	aw9523b_read_reg(0x01, &value);
+	aw9523b_read_reg(INPUT_PORT1, &value);
 	return value;
 }
 
 static void aw9523b_set_P1_value(u8 data)
 {
-	aw9523b_write_reg(0x03, data);
+	aw9523b_write_reg(OUTPUT_PORT1, data);
 }
 
 static void default_p0_p1_settings(void)
@@ -436,18 +436,18 @@ static void aw9523b_work_func(struct work_struct *work)
 	input_sync(aw9523b_input_dev);
 
 	if (keydown)
-		schedule_delayed_work(&pdata->work, msecs_to_jiffies(50)); // TODO decide how long to wait
+		schedule_delayed_work(&pdata->work, msecs_to_jiffies(POLL_INTERVAL)); 
 
 	//aw9523b_enable_P0_interupt();
 	//aw9523b_get_P0_value();
 	//aw9523b_get_P1_value();
-	//aw9523b_set_P1_value(OUT_LOW_VALUE);
+	//aw9523b_set_P1_value(P1_DEFAULT_VALUE);
 	aw9523b_irq_enable(pdata);
 	aw9523b_config_P0_input();
 	aw9523b_enable_P0_interupt();
 	aw9523b_config_P1_output();
 	aw9523b_disable_P1_interupt();
-	aw9523b_set_P1_value(OUT_LOW_VALUE);
+	aw9523b_set_P1_value(P1_DEFAULT_VALUE);
 }
 
 static irqreturn_t aw9523b_irq_handler(int irq, void *dev_id)
@@ -462,8 +462,8 @@ static irqreturn_t aw9523b_irq_handler(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
-#if 1
 
+#if 1
 static ssize_t aw9523b_show_chip_id(struct device *dev,
                     struct device_attribute *attr, char *buf)
 {
@@ -515,6 +515,7 @@ static const struct attribute_group aw9523b_attr_grp = {
 };
 
 #endif
+
 #if 0
 static DRIVER_ATTR(aw9523b_reg, S_IRUGO, aw9523b_show_reg, NULL);
 static DRIVER_ATTR(aw9523b_chip_id, S_IRUGO, aw9523b_show_chip_id, NULL);
@@ -544,6 +545,7 @@ static int aw9523b_create_attr(struct device_driver *driver)
 
 static struct platform_driver aw9523b_pdrv;
 #endif
+
 static int register_aw9523b_input_dev(struct device *pdev)
 {
 	int i, j;
@@ -722,7 +724,6 @@ static int aw9523b_parse_dt(struct device *dev,
 }
 #endif
 
-
 static int aw9523b_probe(struct i2c_client *client,
         const struct i2c_device_id *id)
 {
@@ -811,7 +812,6 @@ static int aw9523b_probe(struct i2c_client *client,
 //       goto deinit_power_exit;
 //   }
 
-
 	default_p0_p1_settings();     //io_init
 	aw9523b_get_P0_value();
 	aw9523b_get_P1_value();
@@ -846,7 +846,6 @@ kfree_exit:
 exit:
 	return err;
 }
-
 
 static int aw9523b_remove(struct i2c_client *client)
 {
@@ -1822,7 +1821,6 @@ static void __exit gpio_keys_exit(void)
 
 late_initcall(gpio_keys_init);
 module_exit(gpio_keys_exit);
-
 
 static const struct i2c_device_id aw9523b_id[] = {
 	{ AWINIC_NAME, 0 },
