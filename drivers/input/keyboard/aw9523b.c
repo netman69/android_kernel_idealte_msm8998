@@ -94,7 +94,7 @@ struct aw9523b_data {
     struct i2c_client *client;    
     spinlock_t irq_lock;
     bool irq_is_disabled; 
-#ifdef USEVIO	
+#ifdef USEVIO
     struct regulator *vio;
 	bool power_enabled;
 #endif
@@ -107,28 +107,6 @@ struct aw9523b_data {
 #define AW9523B_VIO_MIN_UV       1800000
 #define AW9523B_VIO_MAX_UV       1800000
 
-typedef enum {
-    P0_0,
-    P0_1, 
-    P0_2, 
-    P0_3, 
-    P0_4, 
-    P0_5, 
-    P0_6, 
-    P0_7    
-} P0_Enum;
- 
-typedef enum {
-    P1_0, 
-    P1_1, 
-    P1_2, 
-    P1_3, 
-    P1_4,   
-    P1_5, 
-    P1_6, 
-    P1_7    
-} P1_Enum;
- 
 static u8  aw9523b_chip_id = 0;
 
 static struct input_dev *aw9523b_input_dev;
@@ -655,7 +633,6 @@ static int aw9523b_power_ctl(struct aw9523b_data *data, bool on)
     }
 #endif
     return ret;
-
 }
 
 static int aw9523b_power_init(struct aw9523b_data *data)
