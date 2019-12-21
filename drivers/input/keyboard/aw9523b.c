@@ -438,16 +438,12 @@ static void aw9523b_work_func(struct work_struct *work)
 	if (keydown)
 		schedule_delayed_work(&pdata->work, msecs_to_jiffies(POLL_INTERVAL)); 
 
-	//aw9523b_enable_P0_interupt();
-	//aw9523b_get_P0_value();
-	//aw9523b_get_P1_value();
-	//aw9523b_set_P1_value(P1_DEFAULT_VALUE);
+	aw9523b_disable_P1_interupt();
+	aw9523b_set_P1_value(P1_DEFAULT_VALUE);
+	aw9523b_config_P1_output();
 	aw9523b_irq_enable(pdata);
 	aw9523b_config_P0_input();
 	aw9523b_enable_P0_interupt();
-	aw9523b_config_P1_output();
-	aw9523b_disable_P1_interupt();
-	aw9523b_set_P1_value(P1_DEFAULT_VALUE);
 }
 
 static irqreturn_t aw9523b_irq_handler(int irq, void *dev_id)
@@ -764,8 +760,6 @@ static int aw9523b_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, pdata);
 	pdata->client = client;
 
-
-
 	err = aw9523b_power_init(pdata);
 	if (err) {
 		dev_err(&client->dev, "Failed to get aw9523b regulators\n");
@@ -778,7 +772,6 @@ static int aw9523b_probe(struct i2c_client *client,
 		err = -EINVAL;
 		goto deinit_power_exit;
 	}
-
 
 	err = aw9523b_hw_reset(pdata);
 	if (err == 0xff)
