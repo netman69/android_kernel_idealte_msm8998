@@ -124,8 +124,8 @@ static const unsigned short  key_array[Y_NUM][X_NUM] = {
 };
 
 // This macro sets the interval between polls of the key matrix for ghosted keys (in milliseconds).
-// Note that polling only happens if a key is already pressed.
-#define POLL_INTERVAL (50) // TODO Decide how fast to poll.
+// Note that polling only happens while one key is already pressed, to scan the matrix for keys in the same row.
+#define POLL_INTERVAL (5)
 
 #define P1_DEFAULT_VALUE (0) /*p1用来输出，这个值是p1的初始值*/
 
@@ -137,16 +137,16 @@ static int aw9523b_i2c_read(struct i2c_client *client, char *writebuf,
 	if (writelen > 0) {
 		struct i2c_msg msgs[] = {
 			{
-				 .addr = client->addr,
-				 .flags = 0,
-				 .len = writelen,
-				 .buf = writebuf,
+				.addr = client->addr,
+				.flags = 0,
+				.len = writelen,
+				.buf = writebuf,
 			},
 			{
-				 .addr = client->addr,
-				 .flags = I2C_M_RD,
-				 .len = readlen,
-				 .buf = readbuf,
+				.addr = client->addr,
+				.flags = I2C_M_RD,
+				.len = readlen,
+				.buf = readbuf,
 			},
 		};
 		ret = i2c_transfer(client->adapter, msgs, 2);
@@ -156,10 +156,10 @@ static int aw9523b_i2c_read(struct i2c_client *client, char *writebuf,
 	} else {
 		struct i2c_msg msgs[] = {
 			{
-				 .addr = client->addr,
-				 .flags = I2C_M_RD,
-				 .len = readlen,
-				 .buf = readbuf,
+				.addr = client->addr,
+				.flags = I2C_M_RD,
+				.len = readlen,
+				.buf = readbuf,
 			 },
 		};
 		ret = i2c_transfer(client->adapter, msgs, 1);
@@ -374,7 +374,8 @@ static void aw9523b_work_func(struct work_struct *work)
 	struct aw9523b_data *pdata = NULL;
 	u16 keycode = 0xFF;
 	static u8 capslock_led_enable = 0;
-	int i, j, k, keydown = 0;
+	int i, j, k;
+	u8 keymask = 0;
 
 	pdata = container_of((struct delayed_work *) work, struct aw9523b_data, work);
 	AW9523_LOG("aw9523b_work_func  enter \n");
@@ -388,8 +389,7 @@ static void aw9523b_work_func(struct work_struct *work)
 		// This is important as otherwise another key in the same column will drive the row positive.
 		aw9523b_write_reg(CONFIG_PORT1, ~(1 << i)); // TODO Maybe use macro for the 0x05...
 		state[i] = ~(aw9523b_get_P0_value());
-		if (state[i] != 0)
-			keydown++;
+		keymask |= state[i];
 		AW9523_LOG("p1_value=%x p0_value=%x\n", ~(1 << i), ~state[i]);
 	}
 	aw9523b_write_reg(CONFIG_PORT1, 0);
@@ -435,15 +435,22 @@ static void aw9523b_work_func(struct work_struct *work)
 	}
 	input_sync(aw9523b_input_dev);
 
-	if (keydown)
-		schedule_delayed_work(&pdata->work, msecs_to_jiffies(POLL_INTERVAL)); 
+	// We re-schedule ourselves to poll for changes if a key is pressed
+	//   because the pressed key could obscure others when not scanning.
+	if (keymask)
+		schedule_delayed_work(&pdata->work, msecs_to_jiffies(POLL_INTERVAL));
 
+	// Re-enabled the interrupt and make sure all is right.
 	aw9523b_disable_P1_interupt();
 	aw9523b_set_P1_value(P1_DEFAULT_VALUE);
 	aw9523b_config_P1_output();
 	aw9523b_irq_enable(pdata);
 	aw9523b_config_P0_input();
 	aw9523b_enable_P0_interupt();
+
+	// Check if there wasn't a key pressed while we had interrupts disabled.
+	if (aw9523b_get_P0_value() != (u8) ~keymask)
+		schedule_delayed_work(&pdata->work, 0);
 }
 
 static irqreturn_t aw9523b_irq_handler(int irq, void *dev_id)
